@@ -2,9 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import h5py
 import scipy
+import cv2
 from scipy import ndimage
 import utils as lr_utils
-
+from PIL import Image
 
 # GRADED FUNCTION: sigmoid
 def sigmoid(z):
@@ -39,9 +40,9 @@ def propagate(w, b, X, Y):
     Implement the cost function and its gradient for the propagation explained above
 
     Arguments:
-    w -- weights, a numpy array of size (num_px * num_px * 3, 1)
+    w -- weights, a numpy array of size (num_px * num_px * c, 1)
     b -- bias, a scalar
-    X -- data of size (num_px * num_px * 3, number of examples)
+    X -- data of size (num_px * num_px * c, number of examples)
     Y -- true "label" vector (containing 0 if non-cat, 1 if cat) of size (1, number of examples)
 
     Return:
@@ -79,9 +80,9 @@ def optimize(w, b, X, Y, num_iterations, learning_rate, print_cost = False):
     This function optimizes w and b by running a gradient descent algorithm
     
     Arguments:
-    w -- weights, a numpy array of size (num_px * num_px * 3, 1)
+    w -- weights, a numpy array of size (num_px * num_px * c, 1)
     b -- bias, a scalar
-    X -- data of shape (num_px * num_px * 3, number of examples)
+    X -- data of shape (num_px * num_px * c, number of examples)
     Y -- true "label" vector (containing 0 if non-cat, 1 if cat), of shape (1, number of examples)
     num_iterations -- number of iterations of the optimization loop
     learning_rate -- learning rate of the gradient descent update rule
@@ -98,14 +99,14 @@ def optimize(w, b, X, Y, num_iterations, learning_rate, print_cost = False):
     for i in range(num_iterations):
         
         
-        # Cost and gradient calculation (≈ 1-4 lines of code)
+        # Cost and gradient calculation
         grads, cost = propagate(w, b, X, Y)
         
         # Retrieve derivatives from grads
         dw = grads["dw"]
         db = grads["db"]
         
-        # update rule (≈ 2 lines of code)
+        # update rule 
         w = w - learning_rate * dw
         b = b - learning_rate * db
         
@@ -133,9 +134,9 @@ def predict(w, b, X):
     Predict whether the label is 0 or 1 using learned logistic regression parameters (w, b)
     
     Arguments:
-    w -- weights, a numpy array of size (num_px * num_px * 3, 1)
+    w -- weights, a numpy array of size (num_px * num_px * c, 1)
     b -- bias, a scalar
-    X -- data of size (num_px * num_px * 3, number of examples)
+    X -- data of size (num_px * num_px * c, number of examples)
     
     Returns:
     Y_prediction -- a numpy array (vector) containing all predictions (0/1) for the examples in X
@@ -162,14 +163,14 @@ def predict(w, b, X):
 
 # GRADED FUNCTION: model
 
-def model(X_train, Y_train, X_test, Y_test, num_iterations = 2000, learning_rate = 0.5, print_cost = False):
+def model(X_train, Y_train, X_test, Y_test, num_iterations = 1, learning_rate = 0.5, print_cost = False):
     """
     Builds the logistic regression model by calling the function you've implemented previously
     
     Arguments:
-    X_train -- training set represented by a numpy array of shape (num_px * num_py * 3, m_train)
+    X_train -- training set represented by a numpy array of shape (num_px * num_py * c, m_train)
     Y_train -- training labels represented by a numpy array (vector) of shape (1, m_train)
-    X_test -- test set represented by a numpy array of shape (num_px * num_px * 3, m_test)
+    X_test -- test set represented by a numpy array of shape (num_px * num_px * c, m_test)
     Y_test -- test labels represented by a numpy array (vector) of shape (1, m_test)
     num_iterations -- hyperparameter representing the number of iterations to optimize the parameters
     learning_rate -- hyperparameter representing the learning rate used in the update rule of optimize()
@@ -178,17 +179,17 @@ def model(X_train, Y_train, X_test, Y_test, num_iterations = 2000, learning_rate
     Returns:
     d -- dictionary containing information about the model.
     """
-    # initialize parameters with zeros (≈ 1 line of code)
+    # initialize parameters with zeros 
     w, b = initialize_with_zeros(X_train.shape[0])
 
-    # Gradient descent (≈ 1 line of code)
+    # Gradient descent 
     parameters, grads, costs = optimize(w, b, X_train, Y_train, num_iterations, learning_rate, print_cost)
     
     # Retrieve parameters w and b from dictionary "parameters"
     w = parameters["w"]
     b = parameters["b"]
     
-    # Predict test/train set examples (≈ 2 lines of code)
+    # Predict test/train set examples 
     Y_prediction_test = predict(w, b, X_test)
     Y_prediction_train = predict(w, b, X_train)
 
@@ -223,13 +224,14 @@ print ("y = " + str(train_set_y[0,index]) + ", it's a '" + classes[train_set_y[0
 
 m_train =  train_set_x_orig.shape[0]
 m_test = test_set_x_orig.shape[0]
-num_py = train_set_x_orig.shape[1]
-num_px = train_set_x_orig.shape[2]
+num_py = train_set_x_orig.shape[2]
+num_px = train_set_x_orig.shape[3]
+num_c = train_set_x_orig.shape[1]
 
 print ("Number of training examples: m_train = " + str(m_train))
 print ("Number of testing examples: m_test = " + str(m_test))
 print ("Height/Width of each image: w = " + str(num_px)+' h=' + str(num_py))
-print ("Each image is of size: (" + str(num_px) + ", " + str(num_py) + ", 3)")
+print ("Each image is of size: (" + str(num_px) + ", " + str(num_py) + ", " + str(num_c))
 print ("train_set_x shape: " + str(train_set_x_orig.shape))
 print ("train_set_y shape: " + str(train_set_y.shape))
 print ("test_set_x shape: " + str(test_set_x_orig.shape))
@@ -254,8 +256,13 @@ d = model(train_set_x, train_set_y, test_set_x, test_set_y, num_iterations = 300
 
 
 w_img = d["w"]
-w_img = w_img[:,0].reshape((129,200,3))
-plt.imshow(w_img*255)
+np.savetxt('test.txt',w_img)
+temp = []
+temp = np.append(w_img[:,0], np.zeros(num_px * num_py))
+print(temp.shape)
+temp = temp.reshape((3,129,200)) * 255
+temp = cv2.merge((temp[0,:,:],temp[1,:,:],temp[2,:,:]))
+plt.imshow(temp)
 plt.show()
 
 

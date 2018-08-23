@@ -8,16 +8,23 @@ def load_data():
 	for x in range(350):
 		img = cv2.imread('data/sensors_on/pattern_im_{0}.jpg'.format(x))
 		if(img is not None):
+			h,s,v = cv2.split(img)
+			img = [h,s]
 			data.append([img, 0])
 
 	for x in range(350):
 		img = cv2.imread('data/no_sensors/pattern_im_{0}.jpg'.format(x))
 		if(img is not None):
+
+			h,s,v = cv2.split(img)
+			img = [h,s]
 			data.append([img, 0])
 
 	for x in range(350):
 		img = cv2.imread('data/sensors_ocluded/pattern_im_{0}.jpg'.format(x))
 		if(img is not None):
+			h,s,v = cv2.split(img)
+			img = [h,s]
 			data.append([img, 1])
 
 	random.shuffle(data)
