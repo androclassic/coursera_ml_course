@@ -35,7 +35,7 @@ def initialize_parameters_deep(layer_dims):
     L = len(layer_dims)            # number of layers in the network
 
     for l in range(1, L):
-        parameters['W' + str(l)] =  np.random.randn(layer_dims[l],layer_dims[l-1]) * 0.01
+        parameters['W' + str(l)] =  np.random.randn(layer_dims[l],layer_dims[l-1]) *  np.sqrt(2./layer_dims[l-1])
         parameters['b' + str(l)] = np.zeros((layer_dims[l],1))
                 
     return parameters
@@ -131,8 +131,26 @@ def compute_cost(AL, Y):
     assert(cost.shape == ())
     return cost
 
+def compute_cost_with_regularization(AL, Y, parameters, lambd):
+	"""
+	Implement the cost function with L2 regularization. See formula (2) above.
+	"""
+	m = Y.shape[1]
+
+	cross_entropy_cost = compute_cost(AL, Y) # This gives you the cross-entropy part of the cost
+	L2_regularization_cost = 0
+	L = len(parameters) // 2 # number of layers in the neural network
+	for l in range(L):
+		W = parameters["W" + str(l+1)] 
+		L2_regularization_cost += np.sum(np.square(W))
+
+	L2_regularization_cost *=  lambd/(2*m)
+	cost = cross_entropy_cost + L2_regularization_cost
+	return cost
+
+
 #linear_backward
-def linear_backward(dZ, cache):
+def linear_backward(dZ, cache, lambd):
     """
     Implement the linear portion of backward propagation for a single layer (layer l)
 
@@ -148,7 +166,7 @@ def linear_backward(dZ, cache):
     A_prev, W, b = cache
     m = A_prev.shape[1]
 
-    dW = dZ.dot(A_prev.T)/m
+    dW = dZ.dot(A_prev.T)/m + (lambd*W)/m
     db = np.sum(dZ, axis = 1, keepdims = True) / m
     dA_prev = W.T.dot(dZ)
     
@@ -159,7 +177,7 @@ def linear_backward(dZ, cache):
     return dA_prev, dW, db
 
  #linear_activation_backward
-def linear_activation_backward(dA, cache, activation):
+def linear_activation_backward(dA, cache, activation, lambd):
     """
     Implement the backward propagation for the LINEAR->ACTIVATION layer.
     
@@ -172,17 +190,17 @@ def linear_activation_backward(dA, cache, activation):
     
     if activation == "relu":
         dZ = relu_backward(dA, activation_cache)
-        dA_prev, dW, db = linear_backward(dZ, linear_cache)
+        dA_prev, dW, db = linear_backward(dZ, linear_cache, lambd)
         
     elif activation == "sigmoid":
         dZ = sigmoid_backward(dA, activation_cache)
-        dA_prev, dW, db = linear_backward(dZ, linear_cache)
+        dA_prev, dW, db = linear_backward(dZ, linear_cache, lambd)
     
     return dA_prev, dW, db
 
 # GRADED FUNCTION: L_model_backward
 
-def L_model_backward(AL, Y, caches):
+def L_model_backward(AL, Y, caches, lambd):
     """
     Implement the backward propagation for the [LINEAR->RELU] * (L-1) -> LINEAR -> SIGMOID group
     
@@ -204,14 +222,14 @@ def L_model_backward(AL, Y, caches):
     # Lth layer (SIGMOID -> LINEAR) gradients. Inputs: "dAL, current_cache". Outputs: "grads["dAL-1"], grads["dWL"], grads["dbL"]
     ### START CODE HERE ### (approx. 2 lines)
     current_cache = caches[L-1]
-    grads["dA" + str(L-1)], grads["dW" + str(L)], grads["db" + str(L)] = linear_activation_backward(dAL, current_cache, "sigmoid")
+    grads["dA" + str(L-1)], grads["dW" + str(L)], grads["db" + str(L)] = linear_activation_backward(dAL, current_cache, "sigmoid", lambd)
     
     # Loop from l=L-2 to l=0
     for l in reversed(range(L-1)):
         # lth layer: (RELU -> LINEAR) gradients.
         # Inputs: "grads["dA" + str(l + 1)], current_cache". Outputs: "grads["dA" + str(l)] , grads["dW" + str(l + 1)] , grads["db" + str(l + 1)] 
         current_cache = caches[l]
-        dA_prev_temp, dW_temp, db_temp =  linear_activation_backward(grads["dA" + str(l + 1)], current_cache, "relu")
+        dA_prev_temp, dW_temp, db_temp =  linear_activation_backward(grads["dA" + str(l + 1)], current_cache, "relu", lambd)
         grads["dA" + str(l)] = dA_prev_temp
         grads["dW" + str(l + 1)] = dW_temp
         grads["db" + str(l + 1)] = db_temp
@@ -236,7 +254,7 @@ def update_parameters(parameters, grads, learning_rate):
 
 #L_layer_model
 
-def L_layer_model(X, Y, layers_dims, learning_rate = 0.0075, num_iterations = 3000, print_cost=False):#lr was 0.009
+def L_layer_model(X, Y, layers_dims, learning_rate = 0.0075, num_iterations = 3000, print_cost=False, lambd = 0.7):#lr was 0.009
     """
     Implements a L-layer neural network: [LINEAR->RELU]*(L-1)->LINEAR->SIGMOID.
     
@@ -263,9 +281,9 @@ def L_layer_model(X, Y, layers_dims, learning_rate = 0.0075, num_iterations = 30
         # Forward propagation: [LINEAR -> RELU]*(L-1) -> LINEAR -> SIGMOID.
         AL, caches = L_model_forward(X, parameters)
         # Compute cost.
-        cost = compute_cost(AL, Y)
+        cost =  compute_cost_with_regularization(AL, Y, parameters, lambd)
         # Backward propagation.
-        grads = L_model_backward(AL, Y, caches)
+        grads = L_model_backward(AL, Y, caches, lambd)
         # Update parameters.
         parameters = update_parameters(parameters, grads, learning_rate)
 

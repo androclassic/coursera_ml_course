@@ -65,7 +65,7 @@ test_set_x = test_set_x_flatten/255.
 
 n_x = train_set_x.shape[0] # size of input layer
 n_y = train_set_y.shape[0] # size of output layer
-layers_dims =  (n_x, 16, 3, n_y)
+layers_dims =  (n_x, 16, 8, 4, n_y)
 
 learning_rate = 0.075
 
