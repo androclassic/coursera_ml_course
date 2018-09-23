@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import random
+import math
 
 def add_image(data, img, y):
 	hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -45,6 +46,39 @@ def load_data():
 
 
 	return X,Y.reshape(1,-1),X_t,Y_t.reshape(1,-1), ['not_occluded', 'occluded']
+
+
+
+def random_mini_batches(X, Y, mini_batch_size = 64):
+    """
+    Creates a list of random minibatches from (X, Y)
+    Returns:
+    mini_batches -- list of synchronous (mini_batch_X, mini_batch_Y)
+    """
+    m = X.shape[1]                  # number of training examples
+    mini_batches = []
+        
+    #shuffle (X, Y)
+    permutation = list(np.random.permutation(m))
+    shuffled_X = X[:, permutation]
+    shuffled_Y = Y[:, permutation].reshape((1,m))
+
+    # partition (shuffled_X, shuffled_Y). Minus the end case.
+    num_complete_minibatches = math.floor(m/mini_batch_size) 
+    for k in range(0, num_complete_minibatches):
+        mini_batch_X = shuffled_X[:, k * mini_batch_size : (k+1) * mini_batch_size]
+        mini_batch_Y = shuffled_Y[:, k * mini_batch_size : (k+1) * mini_batch_size]
+        mini_batch = (mini_batch_X, mini_batch_Y)
+        mini_batches.append(mini_batch)
+    
+    # Handling the end case (last mini-batch < mini_batch_size)
+    if m % mini_batch_size != 0:
+        mini_batch_X = shuffled_X[:, num_complete_minibatches * mini_batch_size : ]
+        mini_batch_Y = shuffled_Y[:, num_complete_minibatches * mini_batch_size : ]
+        mini_batch = (mini_batch_X, mini_batch_Y)
+        mini_batches.append(mini_batch)
+    
+    return mini_batches
 
 def load_batch_cifar(filename):
 	import pickle

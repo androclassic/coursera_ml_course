@@ -67,16 +67,16 @@ test_set_x = test_set_x_flatten/255.
 
 n_x = train_set_x.shape[0] # size of input layer
 n_y = train_set_y.shape[0] # size of output layer
-layers_dims =  (n_x, 16, 8, 4, n_y)
+layers_dims =  (n_x, 64, 32, 16, n_y)
 
-learning_rate = 0.009
+learning_rate = 0.0009
 
 preloaded_params = lr_utils.load_dictionary('nn_test_params')
 
 
 # Build a model with a n_h-dimensional hidden layer
-parameters, costs = dnn.L_layer_model(train_set_x, train_set_y, layers_dims,  learning_rate, 
-	num_iterations = 1000, print_cost=True, preloaded_weights=preloaded_params)
+parameters, costs = dnn.L_layer_model(train_set_x, train_set_y, layers_dims, 'adam',  learning_rate, 
+	num_epochs = 3000, mini_batch_size=2048, print_cost=True, lambd = 0.9, preloaded_weights=preloaded_params)
 
 # plot the cost
 plt.plot(np.squeeze(costs))
