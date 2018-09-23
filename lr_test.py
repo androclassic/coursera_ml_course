@@ -8,15 +8,16 @@ import cv2
 from scipy import ndimage
 from PIL import Image
 
-train_set_x_orig, train_set_y, test_set_x_orig, test_set_y, classes = lr_utils.load_data()
+train_set_x_orig, train_set_y, test_set_x_orig, test_set_y, classes = lr_utils.load_data_cifar(3)
+index = 1
 
-# Example of a picture
-index = 25
+print ("y = " ,(train_set_y[0,index]) , ", it's a '" , classes[train_set_y[0,index]] ,  "' picture.")
 img = train_set_x_orig[index]
 print(img.shape)
-#plt.imshow(train_set_x_orig[index])
-print ("y = " + str(train_set_y[0,index]) + ", it's a '" + classes[train_set_y[0,index]] +  "' picture.")
-#plt.show()
+temp = cv2.merge((img[0,:,:],img[1,:,:],img[2,:,:]))
+plt.imshow(temp)
+plt.show()
+
 
 
 m_train =  train_set_x_orig.shape[0]
@@ -49,7 +50,7 @@ print ("test_set_y shape: " + str(test_set_y.shape))
 train_set_x = train_set_x_flatten/255.
 test_set_x = test_set_x_flatten/255.
 
-d = lr.model(train_set_x, train_set_y, test_set_x, test_set_y, num_iterations = 6000, learning_rate = 0.0042, print_cost = True)
+d = lr.model(train_set_x, train_set_y, test_set_x, test_set_y, num_iterations = 3000, learning_rate = 0.042, print_cost = True)
 
     
 # Predict test/train set examples 
@@ -67,9 +68,9 @@ print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - test
 w_img = d["w"]
 np.savetxt('test.txt',w_img)
 temp = []
-temp = np.append(w_img[:,0], np.zeros(num_px * num_py))
-#temp = w_img[:,0]
-temp = temp.reshape((3,32,50)) * 255
+#temp = np.append(w_img[:,0], np.zeros(num_px * num_py))
+temp = w_img[:,0]
+temp = temp.reshape((num_c,num_py,num_px)) * 255
 temp = cv2.merge((temp[0,:,:],temp[1,:,:],temp[2,:,:]))
 plt.imshow(temp)
 plt.show()

@@ -21,15 +21,17 @@ def predict(parameters, X):
 
 
 
-train_set_x_orig, train_set_y, test_set_x_orig, test_set_y, classes = lr_utils.load_data()
+train_set_x_orig, train_set_y, test_set_x_orig, test_set_y, classes = lr_utils.load_data_cifar(3)
 
 # Example of a picture
 index = 25
 img = train_set_x_orig[index]
+print ("y = " ,(train_set_y[0,index]) , ", it's a '" , classes[train_set_y[0,index]] ,  "' picture.")
 print(img.shape)
-#plt.imshow(train_set_x_orig[index])
-print ("y = " + str(train_set_y[0,index]) + ", it's a '" + classes[train_set_y[0,index]] +  "' picture.")
+#img = cv2.merge((img[0,:,:],img[1,:,:],img[2,:,:]))
+#plt.imshow(img)
 #plt.show()
+
 
 
 m_train =  train_set_x_orig.shape[0]
@@ -67,10 +69,14 @@ n_x = train_set_x.shape[0] # size of input layer
 n_y = train_set_y.shape[0] # size of output layer
 layers_dims =  (n_x, 16, 8, 4, n_y)
 
-learning_rate = 0.075
+learning_rate = 0.009
+
+preloaded_params = lr_utils.load_dictionary('nn_test_params')
+
 
 # Build a model with a n_h-dimensional hidden layer
-parameters, costs = dnn.L_layer_model(train_set_x, train_set_y, layers_dims,  learning_rate, num_iterations = 2500, print_cost=True)
+parameters, costs = dnn.L_layer_model(train_set_x, train_set_y, layers_dims,  learning_rate, 
+	num_iterations = 1000, print_cost=True, preloaded_weights=preloaded_params)
 
 # plot the cost
 plt.plot(np.squeeze(costs))
@@ -86,7 +92,7 @@ Y_prediction_train = predict(parameters, train_set_x)
 
 
 # Print train/test Errors
-print("train accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_train - train_set_y)) * 100))
-print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - test_set_y)) * 100))
+print("train accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_train - train_set_y.astype(float))) * 100))
+print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_prediction_test - test_set_y.astype(float))) * 100))
 
 plt.show()

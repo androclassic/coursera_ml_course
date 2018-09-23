@@ -45,3 +45,91 @@ def load_data():
 
 
 	return X,Y.reshape(1,-1),X_t,Y_t.reshape(1,-1), ['not_occluded', 'occluded']
+
+def load_batch_cifar(filename):
+	import pickle
+	f = open(filename, 'rb')
+	print('loading', filename)
+	dict = pickle.load(f,  encoding='bytes')
+	images = dict[b'data']
+	images = np.reshape(images, (10000, 3, 32, 32))
+	labels = dict[b'labels']
+	imagearray = np.array(images)   #   (10000, 3072)
+	labelarray = np.array(labels)   #   (10000,)
+	return imagearray, labelarray
+
+def selected_class_data(x,y, idx):
+	yes_idx = np.where( y == idx)
+	no_idx = np.where( y != idx)
+	sel_x = x[ yes_idx]  
+	sel_x_no = x[no_idx]  
+
+	sel_y = np.ones(len(sel_x)).astype(int)
+	sel_y_no = np.zeros(len(sel_x_no)).astype(int)   
+	max_len = np.min([len(sel_y), len(sel_y_no)])
+
+	data_x =np.append(sel_x, sel_x_no[:max_len], 0)
+	data_y= np.append(sel_y, sel_y_no[:max_len], 0)
+
+	s = np.arange(len(data_y))
+	np.random.shuffle(s)
+
+	return data_x[s], data_y[s]
+
+
+
+def load_data_cifar(binary_data_class_idx = None):
+	import pickle
+	path = 'data/cifar-10-batches-py/'
+	train_file = 'data_batch_'
+	test_file = 'test_batch'
+	meta_file = 'batches.meta'
+
+	f = open(path+meta_file, 'rb')
+	dict = pickle.load(f,  encoding='bytes')
+
+	train_x = np.array([])
+	train_y = np.array([])
+
+	for i in range(5):
+		x, y = load_batch_cifar(path+train_file+str(i+1))
+		if(train_x.size == 0):
+			train_x  = x
+		else:
+			train_x =np.append(x, train_x, 0)
+		if(train_y.size == 0):
+			train_y = y
+		else:
+			train_y= np.append(y, train_y, 0)
+
+
+	test_x, test_y = load_batch_cifar(path+test_file)
+
+	labels_names = dict[b'label_names']
+
+	if(binary_data_class_idx != None):
+		train_x, train_y = selected_class_data(train_x, train_y, binary_data_class_idx)
+		test_x, test_y = selected_class_data(test_x, test_y , binary_data_class_idx)
+		labels_names = [b'not_'+labels_names[binary_data_class_idx],labels_names[binary_data_class_idx]]
+
+	    
+	return train_x, train_y.reshape(1,-1), test_x, test_y.reshape(1,-1), labels_names
+
+def save_dictionary(data, filename):
+	try:
+		import cPickle as pickle
+	except ImportError:  # python 3.x
+		import pickle
+
+	with open(filename, 'wb') as fp:
+		pickle.dump(data, fp, protocol=pickle.HIGHEST_PROTOCOL)
+
+def load_dictionary(filename):
+	try:
+		import cPickle as pickle
+	except ImportError:  # python 3.x
+		import pickle
+	data = None
+	with open(filename, 'rb') as fp:
+		data = pickle.load(fp)
+	return data

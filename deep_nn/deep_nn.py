@@ -250,11 +250,14 @@ def update_parameters(parameters, grads, learning_rate):
     return parameters
 
 
+def save_parameters(parameters):
+	import utils as lr_utils
+	lr_utils.save_dictionary(parameters, 'nn_test_params')
 
 
 #L_layer_model
 
-def L_layer_model(X, Y, layers_dims, learning_rate = 0.0075, num_iterations = 3000, print_cost=False, lambd = 0.7):#lr was 0.009
+def L_layer_model(X, Y, layers_dims, learning_rate = 0.0075, num_iterations = 3000, print_cost=False, preloaded_weights = None, lambd = 0.7):#lr was 0.009
     """
     Implements a L-layer neural network: [LINEAR->RELU]*(L-1)->LINEAR->SIGMOID.
     
@@ -274,7 +277,11 @@ def L_layer_model(X, Y, layers_dims, learning_rate = 0.0075, num_iterations = 30
     
     # Parameters initialization. (≈ 1 line of code)
     parameters = initialize_parameters_deep(layers_dims)
-    
+    if preloaded_weights:
+        for l in range(1,len(layers_dims)):
+            assert(parameters["W" + str(l)].shape == preloaded_weights["W" + str(l)].shape)
+        parameters = preloaded_weights
+
     # Loop (gradient descent)
     for i in range(0, num_iterations):
 
@@ -289,6 +296,7 @@ def L_layer_model(X, Y, layers_dims, learning_rate = 0.0075, num_iterations = 30
 
         # Print the cost every 100 training example
         if print_cost and i % 100 == 0:
+            save_parameters(parameters)
             print ("Cost after iteration %i: %f" %(i, cost))
         if print_cost and i % 100 == 0:
             costs.append(cost)
